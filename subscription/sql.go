@@ -1,4 +1,4 @@
-package connection
+package subscription
 
 import (
 	"github.com/jinzhu/gorm"
