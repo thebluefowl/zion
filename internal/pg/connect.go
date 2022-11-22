@@ -6,5 +6,7 @@ import (
 )
 
 func Connect() (*gorm.DB, error) {
-	return gorm.Open(postgres.Open("host=localhost user=enzo password=password dbname=zion port=5432 sslmode=disable TimeZone=UTC"), &gorm.Config{})
+	return gorm.Open(postgres.Open("host=localhost user=enzo password=password dbname=zion port=5432 sslmode=disable TimeZone=UTC"), &gorm.Config{
+		SkipDefaultTransaction: true,
+	})
 }
