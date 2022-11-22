@@ -1,12 +1,12 @@
 package main
 
 import (
+	"github.com/thebluefowl/zion/internal/pg"
 	"github.com/thebluefowl/zion/model"
-	"github.com/thebluefowl/zion/postgres"
 )
 
 func main() {
-	db, err := postgres.Connect()
+	db, err := pg.Connect()
 	if err != nil {
 		panic(err)
 	}

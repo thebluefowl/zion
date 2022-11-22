@@ -10,8 +10,14 @@ type SubscriberService struct {
 	tenantService        *TenantService
 }
 
-func NewService(subscriberRepository model.SubscriberRepository) *SubscriberService {
-	return &SubscriberService{subscriberRepository: subscriberRepository}
+func NewSubscriberService(
+	subscriberRepository model.SubscriberRepository,
+	tenantService *TenantService,
+) *SubscriberService {
+	return &SubscriberService{
+		subscriberRepository: subscriberRepository,
+		tenantService:        tenantService,
+	}
 }
 
 type CreateRequest struct {
@@ -20,59 +26,55 @@ type CreateRequest struct {
 	TenantID string
 }
 
-func (s *SubscriberService) CreateSubscriber(request *CreateRequest) error {
+func (s *SubscriberService) Create(request *CreateRequest) error {
 	tenant, err := s.tenantService.Get(request.TenantID)
 	if err != nil {
 		return err
 	}
 	subscriber := &model.Subscriber{
-		ID:     ksuid.New().String(),
-		Name:   request.Name,
-		Email:  request.Email,
-		Tenant: tenant,
+		ID:       ksuid.New().String(),
+		Name:     request.Name,
+		Email:    request.Email,
+		Tenant:   *tenant,
+		TenantID: request.TenantID,
 	}
 	return s.subscriberRepository.Create(subscriber)
 }
 
-type GetSubscriberRequest struct {
-	ID       string
-	TenantID string
-}
-
-func (s *SubscriberService) GetSubscriber(request *GetSubscriberRequest) (*model.Subscriber, error) {
-	return s.subscriberRepository.Get(request.ID, request.TenantID)
+// GetNotifiers returns all notifiers for a subscriber
+func (s *SubscriberService) GetSubscriber(tenantID, id string) (*model.Subscriber, error) {
+	return s.subscriberRepository.Get(tenantID, id)
 }
 
 type AddNotifierRequest struct {
 	SubscriberID string
 	TenantID     string
 	NotifierType model.NotifierType
-	Config       map[string]interface{}
+	Config       []byte
 }
 
+// AddNotifier adds a notifier to a subscriber
 func (s *SubscriberService) AddNotifier(request *AddNotifierRequest) error {
-	subscriber, err := s.subscriberRepository.Get(request.SubscriberID, request.TenantID)
+	subscriber, err := s.subscriberRepository.Get(request.TenantID, request.SubscriberID)
 	if err != nil {
 		return err
 	}
 	notifier := &model.Notifier{
-		ID:         ksuid.New().String(),
-		Type:       request.NotifierType,
-		Config:     request.Config,
-		Subscriber: *subscriber,
+		ID:           ksuid.New().String(),
+		Subscriber:   *subscriber,
+		SubscriberID: subscriber.ID,
+		TenantID:     subscriber.TenantID,
+		Tenant:       subscriber.Tenant,
+		NotifierType: request.NotifierType,
+		Config:       request.Config,
 	}
-	subscriber.Notifiers = append(subscriber.Notifiers, *notifier)
-	return s.subscriberRepository.Update(subscriber)
+
+	return s.subscriberRepository.CreateNotifier(notifier)
 }
 
-func (s *SubscriberService) GetNotifier(subscriberID, tenantID, notifierID string) (*model.Notifier, error) {
-	return s.subscriberRepository.GetNotifier(subscriberID, tenantID, notifierID)
-}
-
-func (s *SubscriberService) GetNotifiersByType(subscriberID, tenantID string, notifierType model.NotifierType) ([]model.Notifier, error) {
+func (s *SubscriberService) GetNotifiers(subscriberID, tenantID string, notifierType model.NotifierType) ([]model.Notifier, error) {
+	if notifierType == "" {
+		return s.subscriberRepository.GetAllNotifiers(subscriberID, tenantID)
+	}
 	return s.subscriberRepository.GetNotifiersByType(subscriberID, tenantID, notifierType)
-}
-
-func (s *SubscriberService) DeleteNotifier(subscriberID, tenantID string, notifierID string) error {
-	return s.subscriberRepository.DeleteNotifier(subscriberID, tenantID, notifierID)
 }
