@@ -5,20 +5,23 @@ import (
 	"gorm.io/gorm"
 )
 
-type TenantPGRepository struct {
+type TenantRepository struct {
 	db *gorm.DB
 }
 
-func NewTenantPGRepository(db *gorm.DB) *TenantPGRepository {
-	return &TenantPGRepository{db: db}
+func NewTenantRepository(db *gorm.DB) model.TenantRepository {
+	return &TenantRepository{db: db}
 }
 
-func (r *TenantPGRepository) Create(t *model.Tenant) error {
+func (r *TenantRepository) Create(t *model.Tenant) error {
 	return r.db.Create(t).Error
 }
 
-func (r *TenantPGRepository) Get(id string) (*model.Tenant, error) {
+func (r *TenantRepository) Get(id string) (*model.Tenant, error) {
 	tenant := &model.Tenant{}
 	err := r.db.First(tenant, model.Tenant{ID: id}).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
 	return tenant, err
 }

@@ -21,6 +21,7 @@ type Notifier struct {
 	TenantID     string       `gorm:"not null"`
 	Tenant       Tenant       `gorm:"foreignkey:TenantID"`
 	Config       []byte       `gorm:"type:jsonb;not null"`
+	IsActive     bool         `gorm:"not null;default:true"`
 }
 
 type SubscriberRepository interface {
@@ -30,6 +31,7 @@ type SubscriberRepository interface {
 
 	CreateNotifier(notifier *Notifier) error
 	GetNotifier(tenantID, subscriberID, id string) (*Notifier, error)
-	GetNotifierByType(tenantID, subscriberID string, notifierType NotifierType) (*Notifier, error)
+	GetAllNotifiers(tenantID, subscriberID string) ([]Notifier, error)
+	GetNotifiersByType(tenantID, subscriberID string, notifierType NotifierType) ([]Notifier, error)
 	DeleteNotifier(tenantID, subscriberID, id string) error
 }
