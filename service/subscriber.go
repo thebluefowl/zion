@@ -1,76 +1,80 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/segmentio/ksuid"
-	"github.com/thebluefowl/zion/subscription"
+	"github.com/thebluefowl/zion/model"
 )
 
 type SubscriberService struct {
-	subscriberRepository subscription.SubscriberRepository
+	subscriberRepository model.SubscriberRepository
+	tenantService        *TenantService
 }
 
-func NewService(subscriberRepository subscription.SubscriberRepository) *SubscriberService {
-	return &SubscriberService{subscriberRepository: subscriberRepository}
+func NewSubscriberService(
+	subscriberRepository model.SubscriberRepository,
+	tenantService *TenantService,
+) *SubscriberService {
+	return &SubscriberService{
+		subscriberRepository: subscriberRepository,
+		tenantService:        tenantService,
+	}
 }
 
-type CreateSubscriberRequest struct {
-	TenantID string
+type CreateRequest struct {
 	Name     string
 	Email    string
+	TenantID string
 }
 
-func (s *SubscriberService) CreateSubscriber(request *CreateSubscriberRequest) error {
-	subscriber := &subscription.Subscriber{
-		TenantID: request.TenantID,
+func (s *SubscriberService) Create(request *CreateRequest) error {
+	tenant, err := s.tenantService.Get(request.TenantID)
+	if err != nil {
+		return err
+	}
+	subscriber := &model.Subscriber{
+		ID:       ksuid.New().String(),
 		Name:     request.Name,
 		Email:    request.Email,
+		Tenant:   *tenant,
+		TenantID: request.TenantID,
 	}
-
 	return s.subscriberRepository.Create(subscriber)
 }
 
-type CreateChannelRequest struct {
-	Priority int
-	Type     subscription.ChannelType
-	Config   interface{}
+// GetNotifiers returns all notifiers for a subscriber
+func (s *SubscriberService) GetSubscriber(tenantID, id string) (*model.Subscriber, error) {
+	return s.subscriberRepository.Get(tenantID, id)
 }
 
-func (s *SubscriberService) AddChannel(id, tenantID string, c *CreateChannelRequest) (*subscription.Subscriber, error) {
-	if id == "" || tenantID == "" {
-		return nil, errors.New("invalid id or tenantID")
-	}
-	if c == nil {
-		return nil, errors.New("invalid channel")
-	}
-	subscriber, err := s.subscriberRepository.Get(id, tenantID)
-	if err != nil {
-		return nil, err
-	}
-	channel := &subscription.Channel{
-		ID:       ksuid.New().String(),
-		TenantID: tenantID,
-		Priority: c.Priority,
-		Type:     c.Type,
-		Config:   c.Config,
-	}
-	subscriber.AddChannel(*channel)
-	return subscriber, s.subscriberRepository.Update(subscriber)
+type AddNotifierRequest struct {
+	SubscriberID string
+	TenantID     string
+	NotifierType model.NotifierType
+	Config       []byte
 }
 
-func (s *SubscriberService) RemoveChannel(id, tenantID, channelID string) (*subscription.Subscriber, error) {
-	if id == "" || tenantID == "" || channelID == "" {
-		return nil, errors.New("invalid id or tenantID or channelID")
-	}
-	subscriber, err := s.subscriberRepository.Get(id, tenantID)
+// AddNotifier adds a notifier to a subscriber
+func (s *SubscriberService) AddNotifier(request *AddNotifierRequest) error {
+	subscriber, err := s.subscriberRepository.Get(request.TenantID, request.SubscriberID)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	channel := subscription.Channel{
-		ID:       channelID,
-		TenantID: tenantID,
+	notifier := &model.Notifier{
+		ID:           ksuid.New().String(),
+		Subscriber:   *subscriber,
+		SubscriberID: subscriber.ID,
+		TenantID:     subscriber.TenantID,
+		Tenant:       subscriber.Tenant,
+		NotifierType: request.NotifierType,
+		Config:       request.Config,
 	}
-	subscriber.RemoveChannel(channel)
-	return subscriber, s.subscriberRepository.Update(subscriber)
+
+	return s.subscriberRepository.CreateNotifier(notifier)
+}
+
+func (s *SubscriberService) GetNotifiers(subscriberID, tenantID string, notifierType model.NotifierType) ([]model.Notifier, error) {
+	if notifierType == "" {
+		return s.subscriberRepository.GetAllNotifiers(subscriberID, tenantID)
+	}
+	return s.subscriberRepository.GetNotifiersByType(subscriberID, tenantID, notifierType)
 }
