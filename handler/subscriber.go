@@ -31,14 +31,15 @@ func (h *SubscriberHandler) Create(c echo.Context) error {
 	if err := c.Bind(request); err != nil {
 		return c.JSON(400, err)
 	}
-	if err := h.subscriberService.Create(&service.CreateRequest{
+	subscriber, err := h.subscriberService.Create(&service.CreateRequest{
 		Name:     request.Name,
 		Email:    request.Email,
 		TenantID: request.TenantID,
-	}); err != nil {
+	})
+	if err != nil {
 		return c.JSON(500, err)
 	}
-	return c.JSON(200, "OK")
+	return c.JSON(200, subscriber)
 }
 
 func (h *SubscriberHandler) Get(c echo.Context) error {

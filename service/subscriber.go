@@ -26,10 +26,10 @@ type CreateRequest struct {
 	TenantID string
 }
 
-func (s *SubscriberService) Create(request *CreateRequest) error {
+func (s *SubscriberService) Create(request *CreateRequest) (*model.Subscriber, error) {
 	tenant, err := s.tenantService.Get(request.TenantID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	subscriber := &model.Subscriber{
 		ID:       ksuid.New().String(),
@@ -38,7 +38,10 @@ func (s *SubscriberService) Create(request *CreateRequest) error {
 		Tenant:   *tenant,
 		TenantID: request.TenantID,
 	}
-	return s.subscriberRepository.Create(subscriber)
+	if err := s.subscriberRepository.Create(subscriber); err != nil {
+		return nil, err
+	}
+	return subscriber, nil
 }
 
 // GetNotifiers returns all notifiers for a subscriber
