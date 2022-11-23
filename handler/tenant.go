@@ -25,13 +25,14 @@ func (h *TenantHandler) Create(c echo.Context) error {
 	if err := c.Bind(request); err != nil {
 		return c.JSON(400, err)
 	}
-	if err := h.tenantService.Create(&model.Tenant{
+	tenant, err := h.tenantService.Create(&model.Tenant{
 		ID:   ksuid.New().String(),
 		Name: request.Name,
-	}); err != nil {
+	})
+	if err != nil {
 		return c.JSON(500, err)
 	}
-	return c.JSON(200, "OK")
+	return c.JSON(200, tenant)
 }
 
 func (h *TenantHandler) Get(c echo.Context) error {
@@ -39,6 +40,9 @@ func (h *TenantHandler) Get(c echo.Context) error {
 	tenant, err := h.tenantService.Get(id)
 	if err != nil {
 		return c.JSON(500, err)
+	}
+	if tenant == nil {
+		return c.JSON(404, nil)
 	}
 	return c.JSON(200, tenant)
 }
