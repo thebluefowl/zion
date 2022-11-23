@@ -4,41 +4,30 @@ type NotifierType string
 
 const NotifierTypeWebhook NotifierType = "webhook"
 
-type NotifierProvider string
+type NotifierClass string
 
-const NotifierProviderDefault NotifierProvider = "default"
+const NotifierClassDefault NotifierClass = "default"
 
-func ValidateNotifierType(notifierType NotifierType) bool {
-	validNotifierTypes := []NotifierType{NotifierTypeWebhook}
-	for _, validNotifierType := range validNotifierTypes {
-		if validNotifierType == notifierType {
-			return true
-		}
-	}
-	return false
-}
-
-func ValidateNotifierProvider(notifierProvider NotifierProvider) bool {
-	validNotifierProviders := []NotifierProvider{NotifierProviderDefault}
-	for _, validNotifierProvider := range validNotifierProviders {
-		if validNotifierProvider == notifierProvider {
-			return true
-		}
-	}
-	return false
+var NotifierTypeClassMap = map[NotifierType]NotifierClass{
+	NotifierTypeWebhook: NotifierClassDefault,
 }
 
 type Notifier struct {
-	ID           string           `gorm:"primary_key"`
-	Type         NotifierType     `gorm:"column:type;not null"`
-	Provider     NotifierProvider `gorm:"column:provider;not null"`
-	SubscriberID string           `gorm:"not null"`
-	Subscriber   Subscriber       `gorm:"foreignkey:SubscriberID"`
-	TenantID     string           `gorm:"not null"`
-	Tenant       Tenant           `gorm:"foreignkey:TenantID"`
-	Config       []byte           `gorm:"type:jsonb;not null"`
-	IsActive     bool             `gorm:"not null;default:true"`
+	ID           string        `gorm:"primary_key"`
+	Type         NotifierType  `gorm:"column:type;not null"`
+	Class        NotifierClass `gorm:"column:class;not null"`
+	SubscriberID string        `gorm:"not null"`
+	Subscriber   Subscriber    `gorm:"foreignkey:SubscriberID"`
+	TenantID     string        `gorm:"not null"`
+	Tenant       Tenant        `gorm:"foreignkey:TenantID"`
+	Config       []byte        `gorm:"type:jsonb;not null"`
+	IsActive     bool          `gorm:"not null;default:true"`
 }
+
+func (n *Notifier) SetClass() {
+	n.Class = NotifierTypeClassMap[n.Type]
+}
+
 type NotifierRepository interface {
 	Create(notifier *Notifier) error
 	Get(tenantID, subscriberID, id string) (*Notifier, error)

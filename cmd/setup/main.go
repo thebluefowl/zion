@@ -13,4 +13,6 @@ func main() {
 	db.AutoMigrate(&model.Tenant{})
 	db.AutoMigrate(&model.Subscriber{})
 	db.AutoMigrate(&model.Notifier{})
+	db.AutoMigrate(&model.RoutingPolicy{})
+	db.AutoMigrate(&model.Channel{})
 }

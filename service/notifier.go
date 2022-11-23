@@ -24,7 +24,6 @@ type AddNotifierRequest struct {
 	SubscriberID string
 	TenantID     string
 	Type         model.NotifierType
-	Provider     model.NotifierProvider
 	Config       []byte
 }
 
@@ -42,9 +41,10 @@ func (s *NotifierService) Create(request *AddNotifierRequest) (*model.Notifier, 
 		TenantID:     subscriber.TenantID,
 		Tenant:       subscriber.Tenant,
 		Type:         request.Type,
-		Provider:     request.Provider,
 		Config:       request.Config,
 	}
+
+	notifier.SetClass()
 
 	if err := s.notifierRepository.Create(notifier); err != nil {
 		return nil, err

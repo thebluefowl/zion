@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/thebluefowl/zion/model"
@@ -23,7 +22,6 @@ type CreateNotifier struct {
 	SubscriberID string          `param:"subscriber_id"`
 	TenantID     string          `param:"tenant_id"`
 	Type         string          `json:"type"`
-	Provider     string          `json:"provider"`
 	Config       json.RawMessage `json:"config"`
 }
 
@@ -32,22 +30,10 @@ func (h *NotifierHandler) Create(c echo.Context) error {
 	if err := c.Bind(request); err != nil {
 		return c.JSON(400, err)
 	}
-
-	notifierProvider := model.NotifierProvider(strings.ToLower(request.Provider))
-	if !model.ValidateNotifierProvider(notifierProvider) {
-		return c.JSON(400, "Invalid provider")
-	}
-
-	notifierType := model.NotifierType(strings.ToLower(request.Type))
-	if !model.ValidateNotifierType(notifierType) {
-		return c.JSON(400, "Invalid type")
-	}
-
 	notifier, err := h.notifierService.Create(&service.AddNotifierRequest{
 		SubscriberID: request.SubscriberID,
 		TenantID:     request.TenantID,
 		Type:         model.NotifierType(request.Type),
-		Provider:     model.NotifierProvider(request.Provider),
 		Config:       request.Config,
 	})
 	if err != nil {
