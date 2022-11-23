@@ -27,7 +27,7 @@ func (r *NotifierRepository) Filter(tenantID, subscriberID string, notifierType 
 	notifiers := []model.Notifier{}
 	filter := model.Notifier{TenantID: tenantID, SubscriberID: subscriberID, IsActive: isActive}
 	if notifierType != "" {
-		filter.NotifierType = notifierType
+		filter.Type = notifierType
 	}
 	err := r.db.Preload("Subscriber").Preload("Tenant").Preload("Subscriber.Tenant").Find(&notifiers, filter).Error
 	if err == gorm.ErrRecordNotFound {
