@@ -23,15 +23,16 @@ func (r *NotifierRepository) Get(tenantID, subscriberID, id string) (*model.Noti
 	return notifier, err
 }
 
-func (r *NotifierRepository) GetAll(tenantID, subscriberID string) ([]model.Notifier, error) {
+func (r *NotifierRepository) Filter(tenantID, subscriberID string, notifierType model.NotifierType, isActive bool) ([]model.Notifier, error) {
 	notifiers := []model.Notifier{}
-	err := r.db.Preload("Subscriber").Find(&notifiers, model.Notifier{TenantID: tenantID, SubscriberID: subscriberID}).Error
-	return notifiers, err
-}
-
-func (r *NotifierRepository) GetByType(tenantID, subscriberID string, notifierType model.NotifierType) ([]model.Notifier, error) {
-	notifiers := []model.Notifier{}
-	err := r.db.Preload("Subscriber").Find(&notifiers, model.Notifier{TenantID: tenantID, SubscriberID: subscriberID, NotifierType: notifierType}).Error
+	filter := model.Notifier{TenantID: tenantID, SubscriberID: subscriberID, IsActive: isActive}
+	if notifierType != "" {
+		filter.NotifierType = notifierType
+	}
+	err := r.db.Preload("Subscriber").Preload("Tenant").Preload("Subscriber.Tenant").Find(&notifiers, filter).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
 	return notifiers, err
 }
 

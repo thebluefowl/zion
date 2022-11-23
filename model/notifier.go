@@ -15,7 +15,6 @@ type Notifier struct {
 type NotifierRepository interface {
 	Create(notifier *Notifier) error
 	Get(tenantID, subscriberID, id string) (*Notifier, error)
-	GetAll(tenantID, subscriberID string) ([]Notifier, error)
-	GetByType(tenantID, subscriberID string, notifierType NotifierType) ([]Notifier, error)
+	Filter(tenantID, subscriberID string, notifierType NotifierType, isActive bool) ([]Notifier, error)
 	Delete(tenantID, subscriberID, id string) error
 }
